@@ -24,20 +24,23 @@ def test_reference_r_mean():
 
 # see https://pytorch.org/docs/stable/generated/torch.var.html
 def test_reference_var():
-    shape = (100, 100, 100, 100)
+    shape = (50,40,30,20,10)
     dims = (-2, -1)
+
     x = torch.normal(10, 2, shape)
 
     expected = x.var(dims)
     actual   = var(x, dims)
+
     assert torch.allclose(expected, actual)
 
-
 def test_reference_r_var():
-    shape = (100, 100, 100)
-    x = torch.normal(10, 2, shape, requires_grad=True)
+    shape = (50,40,30,20,10)
+    dims = (-2, -1)
 
-    dy = torch.tensor(1)
-    expected = x.var().grad_fn(dy)
-    actual   = r_var(x, dy)
+    x = torch.normal(10, 2, shape, requires_grad=True)
+    dy = torch.arange(50*40*30).view((50,40,30))
+
+    expected = x.var(dims).grad_fn(dy)
+    actual   = r_var(x, dy, dims)
     assert torch.allclose(expected, actual)
