@@ -39,15 +39,15 @@ def r_var(x, dy, dims, correction=1):
     result = grad * dy.view(dy.shape + (1,)*len(dims))
     return result
 
-def softmax(x, dim):
+def softmax(x):
     """ softmax over final dimension """
-    z = x - x.max(dim=dim, keepdim=True).values
+    z = x - x.max(dim=-1, keepdim=True).values
     num = z.exp()
     den = num.sum(dim=-1, keepdim=True)
     return num / den
 
-# this is what the Softmax op implements, but it's also wrong!
-# TODO: FIXME
-def r_softmax(x, dy, dim):
-    sx = softmax(x, dim)
-    return sx * (1 - sx) * dy
+def r_softmax(x, dy):
+    softmax_x = softmax(x)
+    dot_product = (softmax_x * dy).sum(dim=-1, keepdim=True)
+    grad_x = softmax_x * (dy - dot_product)
+    return grad_x

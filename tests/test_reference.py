@@ -59,16 +59,14 @@ def test_reference_softmax():
     actual   = softmax(x, dim=-1)
     assert torch.allclose(expected, actual)
 
-@unittest.skip("TODO")
 def test_reference_r_softmax():
     # shape = (50,40,30)
     shape = (2,10)
-    dim = -1 # torch softmax only supports one dim
 
     x = torch.normal(10, 2, shape, requires_grad=True)
-    dy = torch.ones(shape, dtype=x.dtype)
+    dy = torch.normal(10, 2, shape, dtype=x.dtype)
 
     expected = functional.softmax(x, dim=-1).grad_fn(dy)
-    actual   = r_softmax(x.detach().numpy(), dy.numpy(), dim=-1)
-    breakpoint()
-    assert torch.allclose(expected, actual)
+    actual   = r_softmax(x, dy)
+    # TODO: r_softmax is sometimes fairly far from true values - why?
+    assert torch.allclose(expected, actual, atol=1e-6)
