@@ -1,5 +1,4 @@
 from catgrad.bidirectional.operation import *
-
 from catgpt.util import product
 
 # Mean over the T dimensions

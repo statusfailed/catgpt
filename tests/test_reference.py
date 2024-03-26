@@ -1,6 +1,8 @@
 """ test reference implementations match pytorch """
+import unittest
+
 import torch
-from catgpt.reference import mean, r_mean, var, r_var, softmax
+from catgpt.reference import mean, r_mean, var, r_var, softmax, r_softmax
 
 import torch.nn.functional as functional
 
@@ -54,5 +56,19 @@ def test_reference_softmax():
     x = torch.normal(10, 2, shape)
 
     expected = functional.softmax(x, dim=-1)
-    actual   = softmax(x)
+    actual   = softmax(x, dim=-1)
+    assert torch.allclose(expected, actual)
+
+@unittest.skip("TODO")
+def test_reference_r_softmax():
+    # shape = (50,40,30)
+    shape = (2,10)
+    dim = -1 # torch softmax only supports one dim
+
+    x = torch.normal(10, 2, shape, requires_grad=True)
+    dy = torch.ones(shape, dtype=x.dtype)
+
+    expected = functional.softmax(x, dim=-1).grad_fn(dy)
+    actual   = r_softmax(x.detach().numpy(), dy.numpy(), dim=-1)
+    breakpoint()
     assert torch.allclose(expected, actual)
