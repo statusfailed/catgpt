@@ -30,9 +30,9 @@ def var(x, dims, correction=1):
 
 # https://math.stackexchange.com/questions/2836083/derivative-of-the-variance-wrt-x-i#2887894
 def r_var(x, dy, dims, correction=1):
-    N = product(x.shape[d] for d in dims)
+    n_elem = product(x.shape[d] for d in dims)
+    d = max(0, n_elem - correction)
 
-    d = max(0, N - correction)
     m = mean(x, dims) # (N₀ N₁ ..., T₀, T₁, ...)
     m = m.view(tuple(m.shape + (1,)*len(dims))) # broadcast to (N₀, N₁, ..., 1, 1, ..., 1)
     grad = (x - m) * (2 / d)

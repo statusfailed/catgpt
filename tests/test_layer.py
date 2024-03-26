@@ -21,7 +21,7 @@ def test_mean_fwd():
 
     expected = mean(x, dims=(-2, -1))
     [actual] = f(x)
-    assert torch.allclose(expected, actual)
+    assert torch.all(expected == actual)
 
 def test_mean_rev():
     N = NdArrayType((50,40,30), Dtype.float32)
@@ -36,4 +36,32 @@ def test_mean_rev():
 
     expected = r_mean(x, dy, dims=(-2, -1))
     [actual] = f(x, dy)
+    # TODO: why is this not exact?
     assert torch.allclose(expected, actual)
+
+def test_var_fwd():
+    N = NdArrayType((50,40,30), Dtype.float32)
+    T = NdArrayType((20,10), Dtype.float32)
+
+    c = var_fwd(N, T)
+    Fc = F(c)
+    f = to_python_function(Fc, array_backend=Torch)
+    x = torch.normal(10, 2, (N+T).shape)
+
+    expected = var(x, dims=(-2, -1))
+    [actual] = f(x)
+    assert torch.all(expected == actual)
+
+def test_var_rev():
+    N = NdArrayType((50,40,30), Dtype.float32)
+    T = NdArrayType((20,10), Dtype.float32)
+
+    c = var_rev(N, T)
+    Fc = F(c)
+    f = to_python_function(Fc, array_backend=Torch)
+    x = torch.normal(10, 2, (N+T).shape)
+    dy = torch.normal(10, 2, N.shape)
+
+    expected = r_var(x, dy, dims=(-2, -1))
+    [actual] = f(x, dy)
+    assert torch.all(expected == actual)
