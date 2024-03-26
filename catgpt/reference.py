@@ -38,3 +38,10 @@ def r_var(x, dy, dims, correction=1):
     grad = (x - m) * (2 / d)
     result = grad * dy.view(dy.shape + (1,)*len(dims))
     return result
+
+def softmax(x):
+    """ softmax over final dimension """
+    z = x - x.max()
+    num = z.exp()
+    den = num.sum(dim=-1, keepdim=True)
+    return num / den
