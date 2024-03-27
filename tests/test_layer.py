@@ -102,7 +102,7 @@ def test_softmax_fwd():
 
     x = torch.normal(10, 2, (N+T).shape)
 
-    expected = softmax(x, dim=dim)
+    expected = softmax(x)
     [actual] = f(x)
     assert torch.allclose(expected, actual)
 

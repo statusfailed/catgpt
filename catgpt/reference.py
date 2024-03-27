@@ -51,3 +51,10 @@ def r_softmax(x, dy):
     dot_product = (softmax_x * dy).sum(dim=-1, keepdim=True)
     grad_x = softmax_x * (dy - dot_product)
     return grad_x
+
+# NOTE: this implementation doesn't use the layer norm weights;
+import torch
+def layer_norm(x, epsilon=1e-05):
+    m = x.mean(dim=-1, keepdim=True)
+    v = x.var(dim=-1, keepdim=True, unbiased=False)
+    return (x - m) / (v + epsilon).sqrt()
