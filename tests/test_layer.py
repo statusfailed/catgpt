@@ -9,7 +9,7 @@ from catgrad.target.python import to_python_function
 from catgrad.target.python.array_backend.torch import Torch
 
 from catgpt.layer import *
-from catgpt.reference import mean, r_mean, var, r_var, softmax
+from catgpt.reference import mean, r_mean, var, r_var, softmax, layer_norm
 
 import torch.nn.functional as functional
 
@@ -125,5 +125,17 @@ def test_softmax_rev():
 
     expected = softmax(x, dim=dim).grad_fn(dy)[0]
     [actual] = f(x, dy)
-    breakpoint()
+    assert torch.allclose(expected, actual)
+
+def test_layer_norm():
+    N = NdArrayType((50,40,30), Dtype.float32)
+    T = NdArrayType((20,), Dtype.float32)
+
+    c = layer_norm_fwd(N, T)
+    Fc = F(c)
+    f = to_python_function(Fc, array_backend=Torch)
+    x = torch.normal(10, 2, (N+T).shape)
+
+    expected = layer_norm(x)
+    [actual] = f(x)
     assert torch.allclose(expected, actual)

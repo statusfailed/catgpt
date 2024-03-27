@@ -25,10 +25,9 @@ def x_minus_mu(N: NdArrayType, T: NdArrayType):
     neg_mean = mean_fwd(N, T) >> op(NCopy(N, T)) >> negate(X) # -μ(x)
     return copy(X) >> (neg_mean @ identity(X)) >> add(X) # (x - μ)
 
-def var_fwd(N: NdArrayType, T: NdArrayType):
+def var_fwd(N: NdArrayType, T: NdArrayType, correction=1):
     # constants
     X = obj(N + T)
-    correction = 1
     n_elem = product(T.shape)
     d = max(0, n_elem - correction)
 
@@ -47,3 +46,13 @@ def var_rev(N: NdArrayType, T: NdArrayType):
     bot = op(NCopy(N, T))
 
     return (top @ bot) >> multiply(X)
+
+def layer_norm_fwd(N: NdArrayType, T: NdArrayType, epsilon=1e-05):
+    # NOTE: layer_norm is always over the final dimension only
+    X = obj(N+T)
+    assert len(T.shape) == 1, "layer_norm is only over the final dimension"
+
+    v = var_fwd(N, T, correction=0) >> op(NCopy(N, T))
+    stddev = v >> increment(epsilon)(X) >> exponentiate(-0.5)(X)
+
+    return copy(X) >> (x_minus_mu(N, T) @ stddev) >> multiply(X)
