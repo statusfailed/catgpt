@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from catgrad.signature import NdArrayType, obj, op
 from catgrad.combinators import identity
 from catgrad.special.definition import Definition
-from catgrad.bidirectional.operation import Lens, constant, subtract, copy, multiply
+from catgrad.bidirectional.operation import Lens, constant, subtract, copy, multiply, discard
 import catgrad.core.operation as ops
 
 @dataclass(frozen=True)
