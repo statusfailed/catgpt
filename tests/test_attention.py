@@ -25,19 +25,12 @@ def _compile_id(c):
     return CompiledModel
 
 def test_heads():
+    # TODO: test with parameter input
     c = heads(B, T, C)
     CompiledModel = _compile_id(c)
-    p = torch.ones((C+C3).shape)
-    x = torch.ones((B+T+C).shape)
-    CompiledModel(Torch).predict(p, x)
-
-from dataclasses import dataclass
-from catgrad.signature import Dtype
-from catgrad.target.python.array_backend import ArrayBackend
-
-def test_heads():
-    # TODO: test with parameter input
-    heads(B, T, C)
+    p0 = torch.ones((C+C3).shape)
+    x0 = torch.ones((B+T+C).shape)
+    CompiledModel(Torch).predict(p0, x0)
 
 def test_splitter():
     c = splitter(B, T, C, num_heads)
@@ -47,22 +40,29 @@ def test_splitter():
 
 def test_self_attention():
     c = self_attention(B, T, C, num_heads)
-    # CompiledModel = _compile_id(c)
-    # x = torch.ones((B+T+C3).shape)
-    # CompiledModel(Torch).predict(x)
+    CompiledModel = _compile_id(c)
+    x = torch.ones((B+N+T+K).shape)
+    CompiledModel(Torch).predict(x, x)
 
 def test_value():
-    value(B, T, C, num_heads)
+    c = value(B, T, C, num_heads)
+    CompiledModel = _compile_id(c)
+    x0 = torch.ones((B+N+T+T).shape)
+    x1 = torch.ones((B+N+T+K).shape)
+    CompiledModel(Torch).predict(x0, x1)
 
 def test_attention():
-    attention(B, T, C, num_heads)
+    c = attention(B, T, C, num_heads)
+    CompiledModel = _compile_id(c)
+    p0 = torch.ones((C+C3).shape)
+    x0 = torch.ones((B+T+C).shape)
+    CompiledModel(Torch).predict(p0, x0)
 
 def test_block():
     c = block(B, T, C, num_heads)
     
     # CompiledModel, ParamType, model_ast = compile_model(c, identity, identity)
     CompiledModel = _compile_id(c)
-
     p = torch.ones((C+C3).shape)
     x = torch.ones((B+T+C).shape)
     CompiledModel(Torch).predict(p, x)
