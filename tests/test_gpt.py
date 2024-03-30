@@ -5,13 +5,7 @@ from catgrad.combinators import identity
 from catgrad.signature import NdArrayType, Dtype, op
 from catgrad.target.python.array_backend.torch import Torch
 from catgpt.gpt import gpt
-
-vocab_size = 65
-num_heads = 8
-head_size = 48
-d_model = num_heads * head_size
-sequence_length = 32
-batch_size = 64
+from catgpt.settings import *
 
 B, T, C, V = [ NdArrayType((i,), Dtype.float32) for i in [batch_size, sequence_length, d_model, vocab_size] ]
 N = NdArrayType((num_heads,), B.dtype)

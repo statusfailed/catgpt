@@ -65,3 +65,54 @@ def layer_norm(x, epsilon=1e-05):
 
     e = torch.tensor(-0.5) # NOTE: convert to torch.tensor to get bit-level reproducibility
     return (x - m) * (v + epsilon)**e
+
+################################################################################
+# Attention functions
+
+from catgpt.settings import *
+
+def heads_splitter(p, x):
+    B, T, C = x.size()
+    q_x, k_x, v_x = (x @ p).split(d_model, dim=2) # split along 3*C dim
+    q_x = q_x.view(B, T, num_heads, C // num_heads).transpose(1, 2) # (B, num_heads, T, head_size)
+    k_x = k_x.view(B, T, num_heads, C // num_heads).transpose(1, 2) # (B, num_heads, T, head_size)
+    v_x = v_x.view(B, T, num_heads, C // num_heads).transpose(1, 2) # (B, num_heads, T, head_size)
+    return q_x, k_x, v_x
+
+MASK = ~torch.tril(torch.ones(sequence_length, sequence_length, requires_grad=False, dtype=bool))
+# TODO: move to reference module
+def self_attention(q_x, k_x):
+    import torch
+    import torch.nn.functional as functional
+
+    w0 = q_x @ k_x.transpose(-2, -1)
+    w1 = w0 / torch.sqrt(torch.tensor(d_model)) # d_k = d_model
+    w2 = w1.masked_fill(MASK, float('-inf'))
+    # w3 = functional.softmax(w2, dim=-1) # (B, T, T)
+    w3 = softmax(w2)
+    return w3
+
+def value(a, v):
+    r = a @ v
+    return r.transpose(1,2).reshape(B.shape[0], T.shape[0], C.shape[0])
+
+def attention(p, x):
+    import torch.nn.functional as functional
+    B, T, C = x.size()
+
+    # attention heads + splitting
+    q_x, k_x, v_x = heads_splitter(p, x)
+
+    # self_attention
+    w3 = self_attention(q_x, k_x)
+
+    # w4 = w3 @ v_x
+    # w5 = w4.transpose(1,2).contiguous().view(B, T, C) # reassemble heads
+    w5 = value(w3, v_x)
+    return w5
+
+def block(p, x0):
+    x1 = layer_norm(x0)
+    x2 = attention(p, x1)
+    x3 = x0 + x2
+    return x3
