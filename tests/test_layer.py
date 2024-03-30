@@ -9,7 +9,7 @@ from catgrad.target.python import to_python_function
 from catgrad.target.python.array_backend.torch import Torch
 
 from catgpt.layer import *
-from catgpt.reference import mean, r_mean, var, r_var, softmax, r_softmax, layer_norm
+from catgpt import reference
 
 import torch.nn.functional as functional
 
@@ -24,7 +24,7 @@ def test_mean_fwd():
     f = to_python_function(Fc, array_backend=Torch)
     x = torch.normal(10, 2, (N+T).shape)
 
-    expected = mean(x, dims=(-2, -1))
+    expected = reference.mean(x, dims=(-2, -1))
     [actual] = f(x)
     assert torch.all(expected == actual)
 
@@ -39,7 +39,7 @@ def test_mean_rev():
     x = torch.normal(10, 2, (N+T).shape)
     dy = torch.normal(10, 2, N.shape)
 
-    expected = r_mean(x, dy, dims=(-2, -1))
+    expected = reference.r_mean(x, dy, dims=(-2, -1))
     [actual] = f(x, dy)
     # TODO: why is this not exact?
     assert torch.allclose(expected, actual)
@@ -53,7 +53,7 @@ def test_var_fwd():
     f = to_python_function(Fc, array_backend=Torch)
     x = torch.normal(10, 2, (N+T).shape)
 
-    expected = var(x, dims=(-2, -1))
+    expected = reference.var(x, dims=(-2, -1))
     [actual] = f(x)
     assert torch.all(expected == actual)
 
@@ -67,7 +67,7 @@ def test_var_rev():
     x = torch.normal(10, 2, (N+T).shape)
     dy = torch.normal(10, 2, N.shape)
 
-    expected = r_var(x, dy, dims=(-2, -1))
+    expected = reference.r_var(x, dy, dims=(-2, -1))
     [actual] = f(x, dy)
     assert torch.all(expected == actual)
 
@@ -82,7 +82,7 @@ def test_softmax_fwd():
 
     x = torch.normal(10, 2, (N+T).shape)
 
-    expected = softmax(x)
+    expected = reference.softmax(x)
     [actual] = f(x)
     assert torch.allclose(expected, actual)
 
@@ -101,9 +101,9 @@ def test_softmax_rev():
     dy = torch.normal(10, 2, (N+T).shape)
 
     # expected = r_softmax(x).grad_fn(dy)[0]
-    expected = r_softmax(x, dy)
+    expected = reference.r_softmax(x, dy)
     # NOTE: we're testing rev, and rev expects x input to be softmax(x)!
-    [actual] = f(softmax(x), dy)
+    [actual] = f(reference.softmax(x), dy)
     assert torch.allclose(expected, actual)
 
 def test_layer_norm():
@@ -115,6 +115,6 @@ def test_layer_norm():
     f = to_python_function(Fc, array_backend=Torch)
     x = torch.normal(10, 2, (N+T).shape)
 
-    expected = layer_norm(x)
+    expected = reference.layer_norm(x)
     [actual] = f(x)
     assert torch.allclose(expected, actual)
