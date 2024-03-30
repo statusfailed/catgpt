@@ -110,7 +110,7 @@ def test_layer_norm():
     N = NdArrayType((50,40,30), Dtype.float32)
     T = NdArrayType((20,), Dtype.float32)
 
-    c = layer_norm_fwd(N, T)
+    c = layer_norm(N, T)
     Fc = F(c)
     f = to_python_function(Fc, array_backend=Torch)
     x = torch.normal(10, 2, (N+T).shape)

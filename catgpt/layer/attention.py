@@ -6,7 +6,7 @@ from catgrad.bidirectional.operation import *
 from catgrad.bidirectional.operation import *
 from catgrad.layers import linear
 
-from catgpt.layer.statistics import layer_norm_fwd
+from catgpt.layer.statistics import layer_norm
 from catgpt.layer.softmax import Softmax
 
 def _check_type(T: NdArrayType):
@@ -107,5 +107,5 @@ def attention(B, T, C, num_heads: int):
 
 def block(B, T, C, num_heads):
     X = obj(B+T+C)
-    ln_attn = layer_norm_fwd(B+T, C) >> attention(B, T, C, num_heads)
+    ln_attn = layer_norm(B+T, C) >> attention(B, T, C, num_heads)
     return copy(X) >> (ln_attn @ identity(X)) >> add(X)

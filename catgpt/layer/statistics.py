@@ -47,7 +47,7 @@ def var_rev(N: NdArrayType, T: NdArrayType):
 
     return (top @ bot) >> multiply(X)
 
-def layer_norm_fwd(N: NdArrayType, T: NdArrayType, epsilon=1e-05):
+def layer_norm(N: NdArrayType, T: NdArrayType, epsilon=1e-05):
     # NOTE: layer_norm is always over the final dimension only
     X = obj(N+T)
     assert len(T.shape) == 1, "layer_norm is only over the final dimension"
