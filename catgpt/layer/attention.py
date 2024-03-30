@@ -3,6 +3,7 @@ from typing import List
 
 from catgrad.signature import Dtype, op
 from catgrad.bidirectional.operation import *
+from catgrad.bidirectional.operation import *
 from catgrad.layers import linear
 
 from catgpt.layer.statistics import layer_norm_fwd
@@ -28,23 +29,29 @@ def _get_N_K_types(C: NdArrayType, num_heads: int):
     K = NdArrayType((head_size,), C.dtype)
     return N, K
 
-# TODO: replace me with catgrad core ops
-# @dataclass(frozen=True)
-# class MaskedFillNegInf(Dagger, PythonOp):
-    # N: NdArrayType # batch
-    # T: NdArrayType # buffer dimension
+# hax
+import torch
+from catgrad.target.python.special import PythonOp
+@dataclass(frozen=True)
+class MaskedFillConstant(PythonOp, Dagger):
+    N: NdArrayType # batch size
+    T: NdArrayType # mask type
+    mask: torch.tensor # NOTE: unchecked, but must have type T
+    c: constant
 
-    # def source(self): return obj()
-    # def target(self): return obj(self.T)
-    # def __post_init__(self):
-        # # buffer of ones
-        # self._buffer = torch.tril(torch.ones(T.shape))
+    # core
+    def source(self): return obj(self.N+self.T)
+    def target(self): return obj(self.N+self.T)
+    def __call__(self, x):
+        # in fwd pass, set values @ mask positions to c.
+        result = x.masked_fill(self.mask, self.c)
+        return [result]
 
-    # def __call__(self, x):
-        # return x.masked_fill(self._buffer == 0, float('-inf'))
-
-    # def rev(self):
-        # mask * dy
+    # bidirectional
+    def to_core(self): return op(self)
+    def rev(self):
+        # in rev pass, since values were set to a constant, they are zeroed.
+        return op(MaskedFillConstant(self.N, self.T, self.mask, 0))
 
 def heads(B: NdArrayType, T: NdArrayType, C: NdArrayType):
     _check_types(B, T, C)
@@ -75,9 +82,10 @@ def self_attention(B: NdArrayType, T: NdArrayType, C: NdArrayType, num_heads: in
     a = identity(obj(BNTK)) @ op(Permute(BNTK, [0, 1, 3, 2]))
     b = op(MatrixMultiply(B+N, T, K, T))
     c = scale_inverse(math.sqrt(d_model))(obj(B+N+T+T))
-    d = identity(obj(B+N+T+T)) # TODO: masking!
-    # e = op(Softmax(B+N+T, T))
-    e = identity(obj(B+N+T+T)) # TODO!
+
+    mask = ~torch.tril(torch.ones(T.shape[0], T.shape[0], dtype=bool))
+    d = op(MaskedFillConstant(B+N, T+T, mask, float('-inf')))
+    e = op(Softmax(B+N+T, T))
 
     return a >> b >> c >> d >> e
 

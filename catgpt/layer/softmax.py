@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 from catgrad.signature import NdArrayType, obj, op
-from catgrad.combinators import identity
+from catgrad.combinators import identity, permutation
 from catgrad.special.definition import Definition
-from catgrad.bidirectional.operation import Lens, constant, subtract, copy, multiply, discard
+from catgrad.bidirectional.operation import Lens, constant, subtract, copy, multiply, discard, add, negate, NAdd, NCopy
 import catgrad.core.operation as ops
 
 @dataclass(frozen=True)
@@ -57,18 +57,16 @@ class Softmax(Definition, Lens):
     def fwd(self):
         return op(self) >> copy(self.target())
 
-    # The reverse map is the same as sigmoid: σ(x) · (1 - σ(x)) · dy
+    # The reverse map is similar to sigmoid: σ(x) · (1 - σ(x)) · dy
     def rev(self):
-        raise NotImplementedError("This is not correct")
-        # σ * (1 - σ) * dy
-        #
-        #         /----------\
-        # σ(x) --●            *---\
-        #         \-- (1-) --/     *---
-        #                         /
-        # dy   ------------------/
-        X = obj(self.N + self.T)
-        id_X = identity(X)
-        dec_1 = (constant(1)(X) @ id_X) >> subtract(X) # 1 - x
-        grad = copy(X) >> (id_X @ dec_1) >> multiply(X) # σ * (1 - σ)
-        return (grad @ identity(X)) >> multiply(X) # σ * (1 - σ) * dy
+        N, T = self.N, self.T
+        X = obj(N + T)
+
+        p = permutation(X+X+X+X, [0, 1, 3, 2])
+        lhs = copy(X+X) >> p
+        top = multiply(X) >> op(NAdd(N, T)) >> op(NCopy(N, T)) >> negate(X)
+        id_XX = identity(X+X)
+        mid = (top @ id_XX)
+        rhs = (add(X) @ identity(X)) >> multiply(X)
+
+        return lhs >> mid >> rhs
