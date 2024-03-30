@@ -85,6 +85,7 @@ def test_softmax_fwd():
     expected = reference.softmax(x)
     [actual] = f(x)
     assert torch.allclose(expected, actual)
+    assert torch.all(expected == actual), "softmax not exactly equal to reference"
 
 def test_softmax_rev():
     N = NdArrayType((2,), Dtype.float32)
@@ -106,6 +107,19 @@ def test_softmax_rev():
     [actual] = f(reference.softmax(x), dy)
     assert torch.allclose(expected, actual)
 
+def test_x_minus_mu():
+    N = NdArrayType((50,40,30), Dtype.float32)
+    T = NdArrayType((20,), Dtype.float32)
+
+    c = x_minus_mu(N, T)
+    Fc = F(c)
+    f = to_python_function(Fc, array_backend=Torch)
+    x = torch.normal(10, 2, (N+T).shape)
+
+    expected = x - reference.mean(x, dims=(-1,)).unsqueeze(-1).broadcast_to((N+T).shape)
+    [actual] = f(x)
+    assert torch.all(expected == actual)
+
 def test_layer_norm():
     N = NdArrayType((50,40,30), Dtype.float32)
     T = NdArrayType((20,), Dtype.float32)
@@ -117,4 +131,4 @@ def test_layer_norm():
 
     expected = reference.layer_norm(x)
     [actual] = f(x)
-    assert torch.allclose(expected, actual)
+    assert torch.all(expected == actual)

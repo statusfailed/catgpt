@@ -57,7 +57,8 @@ def heads(B: NdArrayType, T: NdArrayType, C: NdArrayType):
     _check_types(B, T, C)
     # Target has shape of C*3, but we explicitly reshape to be splittable
     C3 = NdArrayType((C.shape[0]*3,), C.dtype)
-    return linear(B+T, C, C3) >> op(Reshape(B+T+C3, B+T+C+3))
+    # NOTE: we do 3+C rather than C+3 here then permute to keep consistency with reference impl
+    return linear(B+T, C, C3) >> op(Reshape(B+T+C3, B+T+3+C)) >> op(Permute(B+T+3+C, [0, 1, 3, 2]))
 
 def splitter(B: NdArrayType, T: NdArrayType, C: NdArrayType, num_heads: int):
     _check_types(B, T, C)
@@ -81,8 +82,9 @@ def self_attention(B: NdArrayType, T: NdArrayType, C: NdArrayType, num_heads: in
 
     a = identity(obj(BNTK)) @ op(Permute(BNTK, [0, 1, 3, 2]))
     b = op(MatrixMultiply(B+N, T, K, T))
-    c = scale_inverse(math.sqrt(d_model))(obj(B+N+T+T))
+    scale_factor = torch.sqrt(torch.tensor(d_model)).item() # NOTE: torch.sqrt != math.sqrt.
 
+    c = scale_inverse(scale_factor)(obj(B+N+T+T))
     mask = ~torch.tril(torch.ones(T.shape[0], T.shape[0], dtype=bool))
     d = op(MaskedFillConstant(B+N, T+T, mask, float('-inf')))
     e = op(Softmax(B+N+T, T))

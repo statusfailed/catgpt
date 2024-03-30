@@ -6,12 +6,7 @@ from catgpt.layer.attention import block
 from catgpt.layer.softmax import Softmax
 from catgpt.layer.statistics import layer_norm
 
-        # x0 = token_embedding # + position_embedding
-        # x1 = self.blocks(x0)
-        # x2 = self.layer_norm(x1)
-        # logits = self.linear(x2)
-
-
+from catgrad.bidirectional.operation import discard, copy
 def gpt(B, T, C, vocab_size: int, num_heads: int, num_blocks: int):
     assert num_blocks >= 0
     V = NdArrayType((vocab_size,), Dtype.float32)

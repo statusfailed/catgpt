@@ -81,6 +81,6 @@ def test_reference_layer_norm():
 
     expected = functional.layer_norm(x, normalized_shape=normalized_shape, weight=None, bias=None, eps=1e-05)
     actual   = layer_norm(x)
-    # we use very high tolerance because we don't actually use torch's
-    # layernorm- ours will do.
+    # we use a high tolerance because we don't actually use torch's layernorm-
+    # ours will do.
     assert torch.allclose(expected, actual, atol=1e-5)

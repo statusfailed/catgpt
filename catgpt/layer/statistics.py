@@ -22,8 +22,8 @@ def mean_rev(N: NdArrayType, T: NdArrayType):
 
 def x_minus_mu(N: NdArrayType, T: NdArrayType):
     X = obj(N + T)
-    neg_mean = mean_fwd(N, T) >> op(NCopy(N, T)) >> negate(X) # -μ(x)
-    return copy(X) >> (neg_mean @ identity(X)) >> add(X) # (x - μ)
+    mu = mean_fwd(N, T) >> op(NCopy(N, T)) # >> negate(X) # -μ(x)
+    return copy(X) >> (identity(X) @ mu) >> subtract(X) # (x - μ)
 
 def var_fwd(N: NdArrayType, T: NdArrayType, correction=1):
     # constants

@@ -1,4 +1,5 @@
 """ reference implementations of forward and reverse maps """
+import math
 from catgpt.util import product
 
 # not sure what internal impl. is. Hope this works!
@@ -42,7 +43,9 @@ def r_var(x, dy, dims, correction=1):
 def softmax(x):
     """ softmax over final dimension """
     z = x - x.max(dim=-1, keepdim=True).values
-    num = z.exp()
+    # num = z.exp()
+    # NOTE: e power for bitwise accuracy with catgrad
+    num = torch.tensor(math.e) ** z
     den = num.sum(dim=-1, keepdim=True)
     return num / den
 
@@ -55,6 +58,10 @@ def r_softmax(x, dy):
 # NOTE: this implementation doesn't use the layer norm weights;
 import torch
 def layer_norm(x, epsilon=1e-05):
-    m = x.mean(dim=-1, keepdim=True)
-    v = x.var(dim=-1, keepdim=True, unbiased=False)
-    return (x - m) / (v + epsilon).sqrt()
+    # m = x.mean(dim=-1, keepdim=True)
+    # v = x.var(dim=-1, keepdim=True, unbiased=False)
+    m = mean(x, dims=(-1,)).unsqueeze(-1).broadcast_to(x.shape)
+    v = var(x, dims=(-1,), correction=0).unsqueeze(-1).broadcast_to(x.shape)
+
+    e = torch.tensor(-0.5) # NOTE: convert to torch.tensor to get bit-level reproducibility
+    return (x - m) * (v + epsilon)**e
