@@ -7,7 +7,8 @@ from catgpt.layer.softmax import Softmax
 from catgpt.layer.statistics import layer_norm
 
 from catgrad.bidirectional.operation import discard, copy
-def gpt(B, T, C, vocab_size: int, num_heads: int, num_blocks: int):
+
+def picogpt(B, T, C, vocab_size: int, num_heads: int, num_blocks: int):
     assert num_blocks >= 0
     V = NdArrayType((vocab_size,), Dtype.float32)
 

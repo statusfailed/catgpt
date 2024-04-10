@@ -4,7 +4,7 @@ from catgrad import compile_model
 from catgrad.combinators import identity
 from catgrad.signature import NdArrayType, Dtype, op
 from catgrad.target.python.array_backend.torch import Torch
-from catgpt.gpt import gpt
+from catgpt.model.picogpt import picogpt
 from catgpt.settings import *
 
 B, T, C, V = [ NdArrayType((i,), Dtype.float32) for i in [batch_size, sequence_length, d_model, vocab_size] ]
@@ -17,7 +17,7 @@ from catgpt.reference.model.picogpt import GPT
 def test_picogpt():
     """ verify we get identical results from the picoGPT torch reference implementation and catGPT """
     B1 = NdArrayType((1,), Dtype.float32)
-    model = gpt(B1, T, C, vocab_size=vocab_size, num_heads=num_heads, num_blocks=1)
+    model = picogpt(B1, T, C, vocab_size=vocab_size, num_heads=num_heads, num_blocks=1)
     CompiledModel, ParamType, model_ast = compile_model(model, identity, identity)
 
     p = [ torch.normal(0, 1, t.shape) for t in ParamType ]
