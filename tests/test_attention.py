@@ -88,3 +88,17 @@ def test_block():
     [actual] = CompiledModel(Torch).predict(p, x)
     expected = reference.block(p, x)
     assert torch.all(expected == actual)
+
+def test_attention_step():
+    c = attention(B, T, C, num_heads=num_heads)
+    CompiledModel, ParamType, model_ast = compile_model(c, identity, identity)
+    run = CompiledModel(Torch)
+
+    ps = [ torch.zeros(T.shape) for T in ParamType ] # (384, 1152)
+    X = B + T + C # (64, 32, 384)
+    Y = B + T + C # (64, 32, 384, 3)
+    x = torch.zeros(X.shape)
+    y = torch.zeros(Y.shape)
+
+    # this should run without error
+    run.step(*ps, x, y)

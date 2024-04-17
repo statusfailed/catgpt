@@ -3,8 +3,10 @@ from dataclasses import dataclass
 from catgrad.signature import NdArrayType, obj, op
 from catgrad.combinators import identity, permutation
 from catgrad.special.definition import Definition
-from catgrad.bidirectional.operation import Lens, constant, subtract, copy, multiply, discard, add, negate, NAdd, NCopy
+from catgrad.bidirectional.operation import Lens, constant, subtract, copy, multiply, discard, add, negate, NAdd, NCopy, Reshape, MatrixMultiply
 import catgrad.core.operation as ops
+
+from catgpt.layer.masked_fill_constant import MaskedFillConstant
 
 @dataclass(frozen=True)
 class Softmax(Definition, Lens):
@@ -57,16 +59,22 @@ class Softmax(Definition, Lens):
     def fwd(self):
         return op(self) >> copy(self.target())
 
-    # The reverse map is similar to sigmoid: σ(x) · (1 - σ(x)) · dy
     def rev(self):
         N, T = self.N, self.T
         X = obj(N + T)
 
-        p = permutation(X+X+X+X, [0, 1, 3, 2])
-        lhs = copy(X+X) >> p
-        top = multiply(X) >> op(NAdd(N, T)) >> op(NCopy(N, T)) >> negate(X)
-        id_XX = identity(X+X)
-        mid = (top @ id_XX)
-        rhs = (add(X) @ identity(X)) >> multiply(X)
+        _1 = NdArrayType((1,), T.dtype)
+        outer_prod = copy(obj(N+T)) >> ( op(Reshape(N+T, N+T+1)) @ op(Reshape(N+T, N+1+T)) ) >> op(MatrixMultiply(N, T, _1, T))
+        diag = diagonal(N, T)
 
-        return lhs >> mid >> rhs
+        jacobian = copy(obj(N+T)) >> (diag @ outer_prod) >> subtract(obj(N+T+T))
+        unsqueeze = op(Reshape(N+T, N+T+_1))
+        matmul = op(MatrixMultiply(N, T, T, _1)) >> op(Reshape(N+T+_1, N+T))
+        return (jacobian @ unsqueeze) >> matmul
+
+# TODO FIXME: this is torch-only; we need an op in catgrad.
+def diagonal(N, T):
+    assert len(T.shape) == 1
+    import torch
+    mask = ~torch.eye(T.shape[0], dtype=bool) # off-diagonals
+    return op(NCopy(N+T, T)) >> op(MaskedFillConstant(N, T+T, mask, 0))

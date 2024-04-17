@@ -106,6 +106,7 @@ def test_softmax_rev():
     # NOTE: we're testing rev, and rev expects x input to be softmax(x)!
     [actual] = f(reference.softmax(x), dy)
     assert torch.allclose(expected, actual)
+    assert torch.all(expected == actual)
 
 def test_x_minus_mu():
     N = NdArrayType((50,40,30), Dtype.float32)

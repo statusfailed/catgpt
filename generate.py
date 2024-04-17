@@ -7,7 +7,7 @@ from catgrad.signature import NdArrayType, Dtype, op
 from catgrad.target.python.array_backend.torch import Torch
 
 from catgpt import reference
-from catgpt.gpt import gpt
+from catgpt.model.picogpt import picogpt
 from catgpt.settings import *
 
 # useful types
@@ -47,7 +47,7 @@ def main():
 
     num_blocks=6
 
-    model = gpt(B1, T, C, vocab_size=vocab_size, num_heads=num_heads, num_blocks=num_blocks)
+    model = picogpt(B1, T, C, vocab_size=vocab_size, num_heads=num_heads, num_blocks=num_blocks)
     CompiledModel, ParamType, model_ast = compile_model(model, identity, identity)
     
     # load params

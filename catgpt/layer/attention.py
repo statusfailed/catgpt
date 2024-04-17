@@ -1,4 +1,5 @@
 import math
+import torch # needed for sqrt; math.sqrt gives different results(!)
 from typing import List
 
 from catgrad.signature import Dtype, op
@@ -8,6 +9,7 @@ from catgrad.layers import linear
 
 from catgpt.layer.statistics import layer_norm
 from catgpt.layer.softmax import Softmax
+from catgpt.layer.masked_fill_constant import MaskedFillConstant
 
 def _check_type(T: NdArrayType):
     assert len(T.shape) == 1, "NdArrayType must have dimension 1"
@@ -28,30 +30,6 @@ def _get_N_K_types(C: NdArrayType, num_heads: int):
     N = NdArrayType((num_heads,), C.dtype)
     K = NdArrayType((head_size,), C.dtype)
     return N, K
-
-# hax
-import torch
-from catgrad.target.python.special import PythonOp
-@dataclass(frozen=True)
-class MaskedFillConstant(PythonOp, Dagger):
-    N: NdArrayType # batch size
-    T: NdArrayType # mask type
-    mask: torch.tensor # NOTE: unchecked, but must have type T
-    c: constant
-
-    # core
-    def source(self): return obj(self.N+self.T)
-    def target(self): return obj(self.N+self.T)
-    def __call__(self, x):
-        # in fwd pass, set values @ mask positions to c.
-        result = x.masked_fill(self.mask, self.c)
-        return [result]
-
-    # bidirectional
-    def to_core(self): return op(self)
-    def rev(self):
-        # in rev pass, since values were set to a constant, they are zeroed.
-        return op(MaskedFillConstant(self.N, self.T, self.mask, 0))
 
 def heads(B: NdArrayType, T: NdArrayType, C: NdArrayType):
     _check_types(B, T, C)

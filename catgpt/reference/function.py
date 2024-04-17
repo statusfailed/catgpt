@@ -49,11 +49,21 @@ def softmax(x):
     den = num.sum(dim=-1, keepdim=True)
     return num / den
 
-def r_softmax(x, dy):
-    softmax_x = softmax(x)
-    dot_product = (softmax_x * dy).sum(dim=-1, keepdim=True)
-    grad_x = softmax_x * (dy - dot_product)
-    return grad_x
+def r_softmax(z, dy):
+    # Compute softmax along the last dimension
+    s = softmax(z)
+
+    # Compute outer product of s with itself.
+    s_expanded = s.unsqueeze(-1)  # shape [..., n, 1]
+    outer_prod = s_expanded * s.unsqueeze(-2)  # shape [..., n, n]
+
+    # Jacobian of softmax
+    jacobian = torch.diag_embed(s) - outer_prod  # shape [..., n, n]
+
+    # Multiply the Jacobian by dy
+    dx = torch.matmul(jacobian, dy.unsqueeze(-1)).squeeze(-1)
+
+    return dx
 
 # NOTE: this implementation doesn't use the layer norm weights;
 import torch

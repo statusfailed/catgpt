@@ -59,16 +59,28 @@ def test_reference_softmax():
     actual   = softmax(x)
     assert torch.allclose(expected, actual)
 
+def randomly_zero_out(tensor):
+    size = tensor.shape
+    mask = torch.zeros_like(tensor)
+    indices = torch.randint(0, size[-1], (size[:-1]))
+    mask.scatter_(-1, indices.unsqueeze(-1), 1)
+    return tensor * mask
+
 def test_reference_r_softmax():
     shape = (50,40,30)
 
-    x = torch.normal(10, 2, shape, requires_grad=True)
-    dy = torch.normal(10, 2, shape, dtype=x.dtype)
+    x = torch.rand(shape) - 1
+    x.requires_grad = True
+    dy = torch.rand(shape, dtype=x.dtype) - 1
+
+    # randomly zero out some entries of dy (as if it came from NLL loss)
+    dy = randomly_zero_out(dy)
 
     expected = functional.softmax(x, dim=-1).grad_fn(dy)
     actual   = r_softmax(x, dy)
+
     # TODO: tolerance here needs to be quite high; why?
-    assert torch.allclose(expected, actual, atol=1e-5)
+    assert torch.allclose(expected, actual)
 
 
 def test_reference_layer_norm():
