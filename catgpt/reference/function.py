@@ -91,7 +91,7 @@ def heads_splitter(p, x):
 
 MASK = ~torch.tril(torch.ones(sequence_length, sequence_length, requires_grad=False, dtype=bool))
 # TODO: move to reference module
-def self_attention(q_x, k_x):
+def query_key(q_x, k_x):
     import torch
     import torch.nn.functional as functional
 
@@ -103,8 +103,11 @@ def self_attention(q_x, k_x):
     return w3
 
 def value(a, v):
+    B = a.shape[0]
+    T = a.shape[-1]
+    C = v.shape[1] * v.shape[3]
     r = a @ v
-    return r.transpose(1,2).reshape(B.shape[0], T.shape[0], C.shape[0])
+    return r.transpose(1,2).reshape(B, T, C)
 
 def attention(p, x):
     import torch.nn.functional as functional
@@ -114,7 +117,7 @@ def attention(p, x):
     q_x, k_x, v_x = heads_splitter(p, x)
 
     # self_attention
-    w3 = self_attention(q_x, k_x)
+    w3 = query_key(q_x, k_x)
 
     # w4 = w3 @ v_x
     # w5 = w4.transpose(1,2).contiguous().view(B, T, C) # reassemble heads

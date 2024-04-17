@@ -9,7 +9,7 @@ from catgrad.target.python import to_python_function
 from catgrad.target.python.array_backend.torch import Torch
 
 from catgpt import reference
-from catgpt.layer.attention import heads, splitter, self_attention, value, attention, block
+from catgpt.layer.attention import heads, splitter, query_key, value, attention, block
 from catgpt.settings import *
 
 F = Forget()
@@ -49,15 +49,15 @@ def test_heads_splitter():
     for e, a in zip(expected, actual):
         assert torch.all(e == a)
 
-def test_self_attention():
-    c = self_attention(B, T, C, num_heads)
+def test_query_key():
+    c = query_key(B, T, C, num_heads)
     CompiledModel = _compile_id(c)
     
     x0 = torch.normal(0, 9, (B+N+T+K).shape)
     x1 = torch.normal(0, 9, (B+N+T+K).shape)
 
     [actual] = CompiledModel(Torch).predict(x0, x1)
-    expected = reference.self_attention(x0, x1)
+    expected = reference.query_key(x0, x1)
     
     assert torch.allclose(expected, actual)
     assert torch.all(expected == actual)

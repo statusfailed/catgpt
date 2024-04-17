@@ -30,14 +30,16 @@ class SelfAttention(nn.Module):
         k_x = k_x.view(B, T, self.n_head, C // self.n_head).transpose(1, 2) # (B, num_heads, T, head_size)
         v_x = v_x.view(B, T, self.n_head, C // self.n_head).transpose(1, 2) # (B, num_heads, T, head_size)
 
-        w0 = q_x @ k_x.transpose(-2, -1)
-        w1 = w0 / torch.sqrt(torch.tensor(self.d_model)) # d_k = d_model
-        w2 = w1.masked_fill(MASK, float('-inf'))
-        # w3 = functional.softmax(w2, dim=-1) # (B, T, T)
-        w3 = reference.softmax(w2)
+        # w0 = q_x @ k_x.transpose(-2, -1)
+        # w1 = w0 / torch.sqrt(torch.tensor(self.d_model)) # d_k = d_model
+        # w2 = w1.masked_fill(MASK, float('-inf'))
+        # # w3 = functional.softmax(w2, dim=-1) # (B, T, T)
+        # w3 = reference.softmax(w2)
+        w3 = reference.query_key(q_x, k_x)
 
-        w4 = w3 @ v_x
-        w5 = w4.transpose(1,2).reshape(B, T, C)
+        # w4 = w3 @ v_x
+        # w5 = w4.transpose(1,2).reshape(B, T, C)
+        w5 = reference.value(w3, v_x)
         return w5
 
 class Block(nn.Module):
@@ -87,11 +89,4 @@ class GPT(nn.Module):
             targets_flat = targets.reshape(B*T)
             loss = F.nll_loss(log_probs_flat, targets_flat)
 
-        # loss = None
-        # if targets is not None:
-            # logits_flat = logits.view(B*T, self.vocab_size) # flatten all sequences??
-            # # NOTE: have to reshape not view here; but only on device='cpu'. view works on device='gpu'!
-            # targets_flat = targets.reshape(B*T)
-            # loss = F.cross_entropy(logits_flat, targets_flat)
-        
         return logits, loss

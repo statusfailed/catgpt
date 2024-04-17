@@ -51,7 +51,7 @@ def splitter(B: NdArrayType, T: NdArrayType, C: NdArrayType, num_heads: int):
 
     return s >> (r @ r @ r) >> (p @ p @ p)
 
-def self_attention(B: NdArrayType, T: NdArrayType, C: NdArrayType, num_heads: int):
+def query_key(B: NdArrayType, T: NdArrayType, C: NdArrayType, num_heads: int):
     _check_types(B, T, C)
     d_model = C.shape[0]
     N, K = _get_N_K_types(C, num_heads)
@@ -83,7 +83,7 @@ def value(B: NdArrayType, T: NdArrayType, C: NdArrayType, num_heads: int):
 def attention(B, T, C, num_heads: int):
     _check_types(B, T, C)
     N, K = _get_N_K_types(C, num_heads)
-    return heads(B, T, C) >> splitter(B, T, C, num_heads) >> (self_attention(B, T, C, num_heads) @ identity(obj(B+N+T+K))) >> value(B, T, C, num_heads)
+    return heads(B, T, C) >> splitter(B, T, C, num_heads) >> (query_key(B, T, C, num_heads) @ identity(obj(B+N+T+K))) >> value(B, T, C, num_heads)
 
 def block(B, T, C, num_heads):
     X = obj(B+T+C)
