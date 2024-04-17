@@ -81,9 +81,17 @@ class GPT(nn.Module):
 
         loss = None
         if targets is not None:
-            logits_flat = logits.view(B*T, self.vocab_size) # flatten all sequences??
-            # NOTE: have to reshape not view here; but only on device='cpu'. view works on device='gpu'!
+            probs = reference.softmax(logits)
+            log_probs = torch.log(probs)
+            log_probs_flat = log_probs.view(B*T, self.vocab_size)
             targets_flat = targets.reshape(B*T)
-            loss = F.cross_entropy(logits_flat, targets_flat)
+            loss = F.nll_loss(log_probs_flat, targets_flat)
+
+        # loss = None
+        # if targets is not None:
+            # logits_flat = logits.view(B*T, self.vocab_size) # flatten all sequences??
+            # # NOTE: have to reshape not view here; but only on device='cpu'. view works on device='gpu'!
+            # targets_flat = targets.reshape(B*T)
+            # loss = F.cross_entropy(logits_flat, targets_flat)
         
         return logits, loss
