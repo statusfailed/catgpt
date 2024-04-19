@@ -13,7 +13,7 @@ classifiers = [
 dependencies = [
   "numpy~=1.23.3",
   "open-hypergraphs~=0.1.2",
-  "catgrad~=0.1.0",
+  "catgrad~=0.2.1",
   "torch~=2.2.1",
 ]
 [project.optional-dependencies]
